@@ -7,6 +7,10 @@ const ECHARTS_FALLBACK_URLS = [
   "https://unpkg.com/echarts@5.5.1/dist/echarts.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.1/echarts.min.js"
 ];
+const SUPABASE_FALLBACK_URLS = [
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+  "https://unpkg.com/@supabase/supabase-js@2"
+];
 
 const PROVINCES = [
   { short: "北京", full: "北京市", adcode: "110000", singleCity: true, cityName: "北京市" },
@@ -232,16 +236,20 @@ function rowToEntry(row) {
 }
 
 async function initCloudSync() {
+  if (hasSupabaseConfig()) {
+    await ensureSupabase();
+  }
+
   cloudConfigured = hasSupabaseConfig() && Boolean(window.supabase?.createClient);
 
   if (!cloudConfigured) {
-    localOnlyMode = true;
+    localOnlyMode = false;
     entries = loadLocalEntries();
-    setSyncStatus("本机模式", "warning");
-    authTitleEl.textContent = "待配置云同步";
-    authFormEl.classList.add("hidden");
+    setSyncStatus("未连接", "error");
+    authTitleEl.textContent = "输入访问码";
+    authFormEl.classList.remove("hidden");
     authActionsEl.classList.add("hidden");
-    authHintEl.textContent = "填写 supabase-config.js 后，上线网址即可启用访问码和云端同步。当前仍使用本机记录。";
+    authHintEl.textContent = "云端组件加载失败，请刷新页面或检查网络。";
     return;
   }
 
@@ -1170,7 +1178,6 @@ nationalMapEl.addEventListener("click", showNationalMap);
 
 authFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!cloudConfigured || !supabaseClient) return;
 
   const code = authEmailEl.value.trim();
   if (!code) return;
@@ -1186,6 +1193,17 @@ authFormEl.addEventListener("submit", async (event) => {
     authHintEl.textContent = "访问码不正确，请重新输入。";
     authEmailEl.select();
     render();
+    return;
+  }
+
+  if (!cloudConfigured || !supabaseClient) {
+    await initCloudSync();
+  }
+
+  if (!cloudConfigured || !supabaseClient) {
+    sendLoginLinkEl.disabled = false;
+    setSyncStatus("未连接", "error");
+    authHintEl.textContent = "云端组件还没连接成功，请刷新页面后再试。";
     return;
   }
 
@@ -1294,6 +1312,19 @@ function ensureEcharts() {
     return chain.then((loaded) => {
       if (loaded || window.echarts) return true;
       return loadScript(url);
+    });
+  }, Promise.resolve(false));
+}
+
+function ensureSupabase() {
+  if (window.supabase?.createClient) {
+    return Promise.resolve(true);
+  }
+
+  return SUPABASE_FALLBACK_URLS.reduce((chain, url) => {
+    return chain.then((loaded) => {
+      if (loaded || window.supabase?.createClient) return true;
+      return loadScript(url).then(() => Boolean(window.supabase?.createClient));
     });
   }, Promise.resolve(false));
 }
