@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="./icons/icon.svg" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
+  <body class="locked">
     <main class="app-shell">
       <section class="map-pane" aria-label="中国城市点亮地图">
         <header class="topbar">
@@ -53,16 +53,16 @@
             <span id="syncStatus" class="pill">未连接</span>
           </div>
           <form id="authForm" class="auth-form">
-            <input id="authEmail" type="email" placeholder="输入邮箱接收登录链接" autocomplete="email" />
-            <button id="sendLoginLink" type="submit">发送登录链接</button>
+            <input id="authEmail" type="password" inputmode="numeric" placeholder="输入访问码" autocomplete="off" />
+            <button id="sendLoginLink" type="submit">进入网站</button>
           </form>
           <div id="authActions" class="auth-actions hidden">
             <button id="migrateLocalData" type="button">导入本机旧记录</button>
             <button id="importDataFile" type="button">导入记录文件</button>
             <input id="importDataInput" class="visually-hidden" type="file" accept="application/json,.json" />
-            <button id="logoutButton" type="button">退出登录</button>
+            <button id="logoutButton" type="button">锁定网站</button>
           </div>
-          <p id="authHint" class="auth-hint">首次部署前，请先填写 Supabase 配置。</p>
+          <p id="authHint" class="auth-hint">输入访问码后进入并启用云端同步。</p>
         </div>
 
         <div class="side-card">

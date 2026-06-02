@@ -2,6 +2,7 @@ const GEO_BASE_URL = "https://geo.datav.aliyun.com/areas_v3/bound/";
 const STORAGE_KEY = "china-city-light-map-v1";
 const MIGRATION_KEY = "china-city-light-map-v1-migrated";
 const SUPABASE_TABLE = "city_records";
+const ACCESS_CODE = "4541867";
 const ECHARTS_FALLBACK_URLS = [
   "https://unpkg.com/echarts@5.5.1/dist/echarts.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.1/echarts.min.js"
@@ -138,7 +139,7 @@ const resetMapEl = document.querySelector("#resetMap");
 let chart = null;
 let entries = {};
 let supabaseClient = null;
-let currentUser = null;
+let accessGranted = false;
 let cloudConfigured = false;
 let localOnlyMode = false;
 let activeProvince = null;
@@ -173,13 +174,11 @@ function hasLocalEntries() {
 }
 
 function localMigrationDone() {
-  if (!currentUser) return false;
-  return localStorage.getItem(`${MIGRATION_KEY}:${currentUser.id}`) === "1";
+  return localStorage.getItem(`${MIGRATION_KEY}:access-code`) === "1";
 }
 
 function markLocalMigrationDone() {
-  if (!currentUser) return;
-  localStorage.setItem(`${MIGRATION_KEY}:${currentUser.id}`, "1");
+  localStorage.setItem(`${MIGRATION_KEY}:access-code`, "1");
 }
 
 function setStatus(message, isError = false) {
@@ -208,12 +207,12 @@ function hasSupabaseConfig() {
 }
 
 function canEditRecords() {
-  return localOnlyMode || Boolean(currentUser);
+  return localOnlyMode || accessGranted;
 }
 
 function entryPayload(key, entry) {
   return {
-    user_id: currentUser.id,
+    user_id: null,
     city_key: key,
     province: entry.province,
     city: entry.city,
@@ -243,38 +242,20 @@ async function initCloudSync() {
     authTitleEl.textContent = "待配置云同步";
     authFormEl.classList.add("hidden");
     authActionsEl.classList.add("hidden");
-    authHintEl.textContent = "填写 supabase-config.js 后，上线网址即可启用邮箱登录和云端同步。当前仍使用本机记录。";
+    authHintEl.textContent = "填写 supabase-config.js 后，上线网址即可启用访问码和云端同步。当前仍使用本机记录。";
     return;
   }
 
   localOnlyMode = false;
   const config = supabaseConfig();
   supabaseClient = window.supabase.createClient(config.url, config.anonKey);
-  const { data } = await supabaseClient.auth.getSession();
-  currentUser = data.session?.user || null;
-
-  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-    currentUser = session?.user || null;
-    if (currentUser) {
-      await loadCloudEntries();
-    } else {
-      entries = {};
-    }
-    renderAuthState();
-    render();
-  });
-
-  if (currentUser) {
-    await loadCloudEntries();
-  } else {
-    entries = {};
-  }
+  entries = {};
 
   renderAuthState();
 }
 
 async function loadCloudEntries() {
-  if (!supabaseClient || !currentUser) return;
+  if (!supabaseClient || !accessGranted) return;
 
   setSyncStatus("同步中", "loading");
   const { data, error } = await supabaseClient
@@ -303,15 +284,15 @@ async function saveEntry(key, entry) {
     return;
   }
 
-  if (!supabaseClient || !currentUser) {
-    throw new Error("请先登录后再保存。");
+  if (!supabaseClient || !accessGranted) {
+    throw new Error("请先输入访问码后再保存。");
   }
 
   setSyncStatus("保存中", "loading");
   const { error } = await supabaseClient
     .from(SUPABASE_TABLE)
     .upsert(entryPayload(key, entry), {
-      onConflict: "user_id,city_key"
+      onConflict: "city_key"
     });
 
   if (error) {
@@ -330,8 +311,8 @@ async function deleteEntry(key) {
     return;
   }
 
-  if (!supabaseClient || !currentUser) {
-    throw new Error("请先登录后再清空记录。");
+  if (!supabaseClient || !accessGranted) {
+    throw new Error("请先输入访问码后再清空记录。");
   }
 
   setSyncStatus("保存中", "loading");
@@ -346,7 +327,7 @@ async function deleteEntry(key) {
 }
 
 async function migrateLocalEntries() {
-  if (!supabaseClient || !currentUser) return;
+  if (!supabaseClient || !accessGranted) return;
 
   const localEntries = loadLocalEntries();
   const rows = Object.entries(localEntries)
@@ -361,7 +342,7 @@ async function migrateLocalEntries() {
 
   setSyncStatus("导入中", "loading");
   const { error } = await supabaseClient.from(SUPABASE_TABLE).upsert(rows, {
-    onConflict: "user_id,city_key"
+    onConflict: "city_key"
   });
 
   if (error) {
@@ -397,8 +378,8 @@ function normalizeImportedRecord(record) {
 }
 
 async function importEntriesFromFile(file) {
-  if (!supabaseClient || !currentUser) {
-    authHintEl.textContent = "请先登录后再导入记录文件。";
+  if (!supabaseClient || !accessGranted) {
+    authHintEl.textContent = "请先输入访问码后再导入记录文件。";
     return;
   }
 
@@ -426,7 +407,7 @@ async function importEntriesFromFile(file) {
 
   setSyncStatus("导入中", "loading");
   const { error } = await supabaseClient.from(SUPABASE_TABLE).upsert(rows, {
-    onConflict: "user_id,city_key"
+    onConflict: "city_key"
   });
 
   if (error) {
@@ -443,16 +424,18 @@ async function importEntriesFromFile(file) {
 function renderAuthState() {
   if (localOnlyMode) return;
 
-  if (!currentUser) {
-    setSyncStatus("未登录", "idle");
-    authTitleEl.textContent = "登录后同步";
+  if (!accessGranted) {
+    document.body.classList.add("locked");
+    setSyncStatus("已锁定", "idle");
+    authTitleEl.textContent = "输入访问码";
     authFormEl.classList.remove("hidden");
     authActionsEl.classList.add("hidden");
-    authHintEl.textContent = "输入邮箱后会收到登录链接；登录后电脑和 iPhone 会同步同一份记录。";
+    authHintEl.textContent = "每次打开或刷新页面后，需要输入访问码进入。";
     return;
   }
 
-  authTitleEl.textContent = currentUser.email || "已登录";
+  document.body.classList.remove("locked");
+  authTitleEl.textContent = "已进入";
   authFormEl.classList.add("hidden");
   authActionsEl.classList.remove("hidden");
 
@@ -460,7 +443,7 @@ function renderAuthState() {
   migrateLocalDataEl.hidden = !shouldMigrate;
   authHintEl.textContent = shouldMigrate
     ? "检测到本机旧记录，可以导入到云端。导入只需执行一次。"
-    : "云端同步已启用。手机和电脑登录同一邮箱即可同步。";
+    : "云端同步已启用。手机和电脑输入同一访问码即可同步。";
 }
 
 function registerServiceWorker() {
@@ -1180,34 +1163,36 @@ authFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!cloudConfigured || !supabaseClient) return;
 
-  const email = authEmailEl.value.trim();
-  if (!email) return;
+  const code = authEmailEl.value.trim();
+  if (!code) return;
 
   sendLoginLinkEl.disabled = true;
-  setSyncStatus("发送中", "loading");
+  setSyncStatus("校验中", "loading");
 
-  const { error } = await supabaseClient.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: window.location.href.split("#")[0]
-    }
-  });
-
-  sendLoginLinkEl.disabled = false;
-
-  if (error) {
-    setSyncStatus("发送失败", "error");
-    authHintEl.textContent = `登录链接发送失败：${error.message}`;
+  if (code !== ACCESS_CODE) {
+    accessGranted = false;
+    entries = {};
+    sendLoginLinkEl.disabled = false;
+    setSyncStatus("访问码错误", "error");
+    authHintEl.textContent = "访问码不正确，请重新输入。";
+    authEmailEl.select();
+    render();
     return;
   }
 
-  setSyncStatus("等待登录", "idle");
-  authHintEl.textContent = "登录链接已发送，请打开邮箱中的链接完成登录。";
+  accessGranted = true;
+  authEmailEl.value = "";
+  await loadCloudEntries();
+  sendLoginLinkEl.disabled = false;
+  renderAuthState();
+  render();
 });
 
 logoutButtonEl.addEventListener("click", async () => {
-  if (!supabaseClient) return;
-  await supabaseClient.auth.signOut();
+  accessGranted = false;
+  entries = {};
+  renderAuthState();
+  render();
 });
 
 migrateLocalDataEl.addEventListener("click", migrateLocalEntries);
