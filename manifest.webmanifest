@@ -1,0 +1,18 @@
+{
+  "name": "点亮中国城市",
+  "short_name": "点亮中国",
+  "description": "记录、搜索并点亮中国地级市认知地图。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f5f2",
+  "theme_color": "#f3f5f2",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

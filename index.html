@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f3f5f2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="点亮中国" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>点亮中国城市</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="map-pane" aria-label="中国城市点亮地图">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">城市认知地图</p>
+            <h1>点亮中国</h1>
+          </div>
+          <div class="top-actions">
+            <button id="nationalMap" type="button">全国城市地图</button>
+            <button id="resetMap" type="button">复位视图</button>
+            <button id="exportData" type="button">导出全部记录</button>
+            <div class="stats">
+              <strong id="litCount">0</strong>
+              <span id="totalCount">/ 0</span>
+              <small>已点亮城市/地区</small>
+            </div>
+          </div>
+        </header>
+
+        <div class="progress-track" aria-hidden="true">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+
+        <div class="map-wrap">
+          <div id="chinaMap" class="china-map"></div>
+          <div id="mapStatus" class="map-status">加载城市边界...</div>
+        </div>
+      </section>
+
+      <aside class="side-pane">
+        <div class="side-card auth-card">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">云端同步</p>
+              <h2 id="authTitle">登录后同步</h2>
+            </div>
+            <span id="syncStatus" class="pill">未连接</span>
+          </div>
+          <form id="authForm" class="auth-form">
+            <input id="authEmail" type="email" placeholder="输入邮箱接收登录链接" autocomplete="email" />
+            <button id="sendLoginLink" type="submit">发送登录链接</button>
+          </form>
+          <div id="authActions" class="auth-actions hidden">
+            <button id="migrateLocalData" type="button">导入本机旧记录</button>
+            <button id="logoutButton" type="button">退出登录</button>
+          </div>
+          <p id="authHint" class="auth-hint">首次部署前，请先填写 Supabase 配置。</p>
+        </div>
+
+        <div class="side-card">
+          <label class="search-label" for="citySearch">搜索全部内容</label>
+          <input id="citySearch" type="search" placeholder="输入城市、省份、记录或人名" autocomplete="off" />
+          <div id="searchResults" class="search-results"></div>
+        </div>
+
+        <div class="side-card province-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">当前地图</p>
+              <h2 id="provinceTitle">请选择省份</h2>
+            </div>
+            <span id="provinceProgress" class="pill">0/0</span>
+          </div>
+          <div id="cityGrid" class="city-grid"></div>
+        </div>
+
+        <form id="entryForm" class="side-card entry-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">城市记录</p>
+              <h2 id="cityTitle">选择一个城市</h2>
+            </div>
+            <button id="clearCity" class="icon-button" type="button" title="清空该城市记录" aria-label="清空该城市记录" disabled>
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <label class="field-label" for="cityPeople">认识的人</label>
+          <input id="cityPeople" type="text" placeholder="选择城市后填写人名，可用逗号分隔" disabled />
+          <label class="field-label" for="cityNote">记录</label>
+          <textarea id="cityNote" placeholder="选择地图上的一个城市填写记录" disabled></textarea>
+          <div class="form-actions">
+            <button id="saveEntry" type="submit" disabled>保存并点亮</button>
+          </div>
+        </form>
+      </aside>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
