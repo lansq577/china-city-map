@@ -1,4 +1,4 @@
 window.CITY_MAP_SUPABASE = {
-  url: "YOUR_SUPABASE_URL",
-  anonKey: "YOUR_SUPABASE_ANON_KEY"
+  url: "https://fxxxlmkoknmtefopyosu.supabase.co",
+  anonKey: "sb_publishable_Fl_yc2wRUO4_rG8QnIlKpw_EfPeXAAc"
 };
