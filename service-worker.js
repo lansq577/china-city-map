@@ -1,4 +1,4 @@
-const CACHE_NAME = "china-city-light-map-v4";
+const CACHE_NAME = "china-city-light-map-v5";
 const APP_ASSETS = [
   "./",
   "./index.html",

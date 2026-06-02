@@ -23,7 +23,6 @@
           </div>
           <div class="top-actions">
             <button id="nationalMap" type="button">全国城市地图</button>
-            <button id="resetMap" type="button">复位视图</button>
             <button id="exportData" type="button">导出全部记录</button>
             <div class="stats">
               <strong id="litCount">0</strong>
@@ -71,17 +70,6 @@
           <div id="searchResults" class="search-results"></div>
         </div>
 
-        <div class="side-card province-panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">当前地图</p>
-              <h2 id="provinceTitle">请选择省份</h2>
-            </div>
-            <span id="provinceProgress" class="pill">0/0</span>
-          </div>
-          <div id="cityGrid" class="city-grid"></div>
-        </div>
-
         <form id="entryForm" class="side-card entry-panel">
           <div class="panel-head">
             <div>
@@ -100,6 +88,17 @@
             <button id="saveEntry" type="submit" disabled>保存并点亮</button>
           </div>
         </form>
+
+        <div class="side-card province-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">当前地图</p>
+              <h2 id="provinceTitle">请选择省份</h2>
+            </div>
+            <span id="provinceProgress" class="pill">0/0</span>
+          </div>
+          <div id="cityGrid" class="city-grid"></div>
+        </div>
       </aside>
     </main>
 

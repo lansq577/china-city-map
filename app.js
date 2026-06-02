@@ -134,7 +134,6 @@ const totalCountEl = document.querySelector("#totalCount");
 const progressFillEl = document.querySelector("#progressFill");
 const exportDataEl = document.querySelector("#exportData");
 const nationalMapEl = document.querySelector("#nationalMap");
-const resetMapEl = document.querySelector("#resetMap");
 
 let chart = null;
 let entries = {};
@@ -1121,15 +1120,6 @@ function showNationalMap() {
   render();
 }
 
-function resetMapView() {
-  nationalLabelsVisible = false;
-  nationalZoom = 1;
-  currentMapName = null;
-  selectedProvince = null;
-  selectedCity = null;
-  render();
-}
-
 function selectCity(provinceName, cityName) {
   selectedProvince = provinceName;
   selectedCity = cityName;
@@ -1177,7 +1167,6 @@ clearCityEl.addEventListener("click", async () => {
 
 searchEl.addEventListener("input", renderSearchResults);
 nationalMapEl.addEventListener("click", showNationalMap);
-resetMapEl.addEventListener("click", resetMapView);
 
 authFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();

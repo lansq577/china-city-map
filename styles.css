@@ -88,7 +88,6 @@ button {
 }
 
 #nationalMap,
-#resetMap,
 #exportData {
   min-height: 40px;
   padding: 0 14px;
@@ -98,10 +97,6 @@ button {
   color: var(--ink);
   cursor: pointer;
   font-weight: 800;
-}
-
-#resetMap {
-  background: #edf1ee;
 }
 
 #exportData {
@@ -497,7 +492,7 @@ textarea:disabled {
     grid-template-columns: 1fr 1fr;
   }
 
-  .entry-panel {
+  .province-panel {
     grid-column: 1 / -1;
   }
 }
@@ -522,7 +517,6 @@ textarea:disabled {
   }
 
   #nationalMap,
-  #resetMap,
   #exportData {
     width: 100%;
   }
