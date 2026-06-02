@@ -58,6 +58,8 @@
           </form>
           <div id="authActions" class="auth-actions hidden">
             <button id="migrateLocalData" type="button">导入本机旧记录</button>
+            <button id="importDataFile" type="button">导入记录文件</button>
+            <input id="importDataInput" class="visually-hidden" type="file" accept="application/json,.json" />
             <button id="logoutButton" type="button">退出登录</button>
           </div>
           <p id="authHint" class="auth-hint">首次部署前，请先填写 Supabase 配置。</p>

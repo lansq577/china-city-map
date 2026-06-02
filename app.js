@@ -113,6 +113,8 @@ const authEmailEl = document.querySelector("#authEmail");
 const sendLoginLinkEl = document.querySelector("#sendLoginLink");
 const authActionsEl = document.querySelector("#authActions");
 const migrateLocalDataEl = document.querySelector("#migrateLocalData");
+const importDataFileEl = document.querySelector("#importDataFile");
+const importDataInputEl = document.querySelector("#importDataInput");
 const logoutButtonEl = document.querySelector("#logoutButton");
 const authHintEl = document.querySelector("#authHint");
 const cityGridEl = document.querySelector("#cityGrid");
@@ -371,6 +373,70 @@ async function migrateLocalEntries() {
   markLocalMigrationDone();
   await loadCloudEntries();
   renderAuthState();
+  render();
+}
+
+function normalizeImportedRecord(record) {
+  const province = String(record?.province || record?.provinceName || "").trim();
+  const city = String(record?.city || record?.cityName || "").trim();
+  const people = String(record?.people || "").trim();
+  const note = String(record?.note || "").trim();
+
+  if (!province || !city || (!people && !note)) return null;
+
+  return {
+    key: cityKey(province, city),
+    entry: {
+      province,
+      city,
+      people,
+      note,
+      updatedAt: record?.updatedAt || new Date().toISOString()
+    }
+  };
+}
+
+async function importEntriesFromFile(file) {
+  if (!supabaseClient || !currentUser) {
+    authHintEl.textContent = "请先登录后再导入记录文件。";
+    return;
+  }
+
+  let payload = null;
+  try {
+    payload = JSON.parse(await file.text());
+  } catch {
+    authHintEl.textContent = "记录文件读取失败，请选择导出的 JSON 文件。";
+    return;
+  }
+
+  const rawRecords = Array.isArray(payload) ? payload : payload.records;
+  if (!Array.isArray(rawRecords)) {
+    authHintEl.textContent = "记录文件格式不正确，请选择“导出全部记录”生成的文件。";
+    return;
+  }
+
+  const imported = rawRecords.map(normalizeImportedRecord).filter(Boolean);
+  if (!imported.length) {
+    authHintEl.textContent = "记录文件里没有可导入的城市记录。";
+    return;
+  }
+
+  const rows = imported.map(({ key, entry }) => entryPayload(key, entry));
+
+  setSyncStatus("导入中", "loading");
+  const { error } = await supabaseClient.from(SUPABASE_TABLE).upsert(rows, {
+    onConflict: "user_id,city_key"
+  });
+
+  if (error) {
+    setSyncStatus("导入失败", "error");
+    authHintEl.textContent = `导入记录文件失败：${error.message}`;
+    return;
+  }
+
+  await loadCloudEntries();
+  authHintEl.textContent = `已导入 ${imported.length} 条记录。`;
   render();
 }
 
@@ -1145,6 +1211,13 @@ logoutButtonEl.addEventListener("click", async () => {
 });
 
 migrateLocalDataEl.addEventListener("click", migrateLocalEntries);
+importDataFileEl.addEventListener("click", () => importDataInputEl.click());
+importDataInputEl.addEventListener("change", async () => {
+  const [file] = importDataInputEl.files || [];
+  if (!file) return;
+  await importEntriesFromFile(file);
+  importDataInputEl.value = "";
+});
 
 exportDataEl.addEventListener("click", () => {
   const records = cityIndex
