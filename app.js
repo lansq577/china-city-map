@@ -1085,6 +1085,20 @@ function render() {
   renderMap();
 }
 
+function refreshMapLayout() {
+  if (!chart) return;
+
+  requestAnimationFrame(() => {
+    chart.resize();
+    renderMap();
+
+    setTimeout(() => {
+      chart.resize();
+      renderMap();
+    }, 120);
+  });
+}
+
 function showProvince(provinceName) {
   activeProvince = provinceName;
   nationalLabelsVisible = false;
@@ -1186,6 +1200,7 @@ authFormEl.addEventListener("submit", async (event) => {
   sendLoginLinkEl.disabled = false;
   renderAuthState();
   render();
+  refreshMapLayout();
 });
 
 logoutButtonEl.addEventListener("click", async () => {
