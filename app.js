@@ -1085,16 +1085,22 @@ function render() {
   renderMap();
 }
 
-function refreshMapLayout() {
-  if (!chart) return;
+function ensureChart() {
+  if (chart || !window.echarts) return;
+  chart = echarts.init(mapEl);
+}
 
+function refreshMapLayout() {
   requestAnimationFrame(() => {
+    ensureChart();
+    if (!chart) return;
+
     chart.resize();
-    renderMap();
+    render();
 
     setTimeout(() => {
       chart.resize();
-      renderMap();
+      render();
     }, 120);
   });
 }
@@ -1199,7 +1205,6 @@ authFormEl.addEventListener("submit", async (event) => {
   await loadCloudEntries();
   sendLoginLinkEl.disabled = false;
   renderAuthState();
-  render();
   refreshMapLayout();
 });
 
@@ -1263,26 +1268,28 @@ async function init() {
     return;
   }
 
-  chart = echarts.init(mapEl);
-  chart.showLoading({
-    text: "加载城市边界...",
-    color: "#5f7f72",
-    textColor: "#738078",
-    maskColor: "rgba(248, 249, 246, 0.76)"
-  });
+  if (localOnlyMode || accessGranted) {
+    ensureChart();
+    chart.showLoading({
+      text: "加载城市边界...",
+      color: "#5f7f72",
+      textColor: "#738078",
+      maskColor: "rgba(248, 249, 246, 0.76)"
+    });
+  }
 
   try {
     await loadAllCities();
-    chart.hideLoading();
+    if (chart) chart.hideLoading();
     setStatus(loadFailures.length ? `部分地区加载失败：${loadFailures.join("、")}` : "");
     render();
   } catch (error) {
-    chart.hideLoading();
+    if (chart) chart.hideLoading();
     setStatus("城市边界数据加载失败，请确认联网后刷新。", true);
   }
 
   window.addEventListener("resize", () => {
-    chart.resize();
+    if (chart) chart.resize();
   });
 }
 
